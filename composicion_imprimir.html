@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Composición para imprimir</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm;
+    }
+
+    :root {
+      --paper: #f4efe8;
+      --ink: #1d1a18;
+      --frame: #2b211d;
+      --frame-wood: #65482d;
+      --frame-inner: #3f2d22;
+      --muted: #6f5a4d;
+      --line: rgba(0,0,0,0.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #e9e4df;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .sheet {
+      width: 210mm;
+      height: 297mm;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .title {
+      position: absolute;
+      top: 18mm;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .layout {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28mm 18mm 22mm 18mm;
+    }
+
+    .marker-wrap {
+      position: relative;
+      width: 108mm;
+      height: 108mm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .marker {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #2c221d 0%, #4e3627 40%, #2c221d 100%);
+      border: 10px solid #5a3d2c;
+      box-shadow: inset 0 0 0 12px #3a2a23, 0 14px 30px rgba(0,0,0,0.18);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .marker:before {
+      content: "";
+      position: absolute;
+      inset: 16px;
+      border: 3px solid rgba(255,255,255,0.18);
+    }
+
+    .marker-pattern {
+      position: absolute;
+      inset: 18px;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 38%),
+        linear-gradient(90deg, rgba(255,255,255,0.06) 0 1%, transparent 1% 12%, rgba(255,255,255,0.05) 12% 13%, transparent 13% 27%, rgba(255,255,255,0.04) 27% 28%, transparent 28% 52%, rgba(255,255,255,0.05) 52% 53%, transparent 53% 100%),
+        linear-gradient(0deg, rgba(255,255,255,0.06) 0 1%, transparent 1% 12%, rgba(255,255,255,0.04) 12% 13%, transparent 13% 27%, rgba(255,255,255,0.05) 27% 28%, transparent 28% 52%, rgba(255,255,255,0.06) 52% 53%, transparent 53% 100%);
+      opacity: 0.8;
+    }
+
+    .marker-label {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.8);
+      text-transform: uppercase;
+    }
+
+    .qr-box {
+      position: absolute;
+      right: 20mm;
+      bottom: 22mm;
+      width: 34mm;
+      height: 34mm;
+      background: #fff;
+      border: 4px solid #1d1a18;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .qr-code {
+      width: 22mm;
+      height: 22mm;
+      background: white;
+      border: 2px solid rgba(0,0,0,0.1);
+      background-image:
+        linear-gradient(90deg, #000 10%, transparent 10%, transparent 20%, #000 20%, #000 30%, transparent 30%, transparent 40%, #000 40%, #000 50%, transparent 50%, transparent 60%, #000 60%, #000 70%, transparent 70%, transparent 80%, #000 80%, #000 90%, transparent 90%),
+        linear-gradient(#000 10%, transparent 10%, transparent 20%, #000 20%, #000 30%, transparent 30%, transparent 40%, #000 40%, #000 50%, transparent 50%, transparent 60%, #000 60%, #000 70%, transparent 70%, transparent 80%, #000 80%, #000 90%, transparent 90%);
+      background-size: 100% 100%;
+      background-position: center;
+      position: relative;
+    }
+
+    .qr-code::before,
+    .qr-code::after {
+      content: "";
+      position: absolute;
+      width: 26%;
+      height: 26%;
+      border: 6px solid #000;
+      background: transparent;
+      top: 8%;
+      left: 8%;
+      box-sizing: border-box;
+    }
+
+    .qr-code::after {
+      left: auto;
+      right: 8%;
+      top: auto;
+      bottom: 8%;
+    }
+
+    .qr-text {
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink);
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .footnote {
+      position: absolute;
+      left: 50%;
+      bottom: 14mm;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .sheet {
+        box-shadow: none;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="title">Recuerdo en AR</div>
+
+    <div class="layout">
+      <div class="marker-wrap">
+        <div class="marker">
+          <div class="marker-pattern"></div>
+          <div class="marker-label">MindAR Marker</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-box">
+      <div class="qr-code" aria-label="Código QR de acceso"></div>
+      <div class="qr-text">Escanea<br />para ver</div>
+    </div>
+
+    <div class="footnote">Mantén margen libre alrededor del marcador</div>
+  </div>
+</body>
+</html>
