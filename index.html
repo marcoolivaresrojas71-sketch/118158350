@@ -2,45 +2,54 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mi Proyecto RA</title>
-    <!-- Importamos A-Frame y el motor MindAR -->
     <script src="./libs/aframe.min.js"></script>
     <script src="./libs/mindar-image-aframe.prod.js"></script>
+    <style>
+        /* Overlay para desbloquear el video en el primer toque (necesario en iOS) */
+        #start-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, sans-serif;
+            font-size: 1.2rem;
+            z-index: 9999;
+            cursor: pointer;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
 
-    <!-- Cambia "marcador.mind" si tu archivo se llama diferente -->
-    <a-scene mindar-image="imageTargetSrc: ./marcador.mind;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights: true" 
-             vr-mode-ui="enabled: false" 
+    <!-- Overlay inicial: un toque desbloquea el video -->
+    <div id="start-overlay">Toca para comenzar la experiencia</div>
+
+    <a-scene mindar-image="imageTargetSrc: ./marcador.mind;"
+             color-space="sRGB"
+             renderer="colorManagement: true, physicallyCorrectLights: true"
+             vr-mode-ui="enabled: false"
              device-orientation-permission-ui="enabled: false">
 
       <a-assets>
-          <!-- Si quieres usar tu propio video, guárdalo en la carpeta del proyecto y cambia src por "./tu-video.mp4" -->
           <video id="marker-video"
                  src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-                 autoplay
                  loop
                  muted
                  playsinline
+                 webkit-playsinline
+                 preload="auto"
                  crossorigin="anonymous"></video>
       </a-assets>
 
-      <script>
-          document.addEventListener('DOMContentLoaded', function () {
-              const video = document.getElementById('marker-video');
-              if (video) {
-                  video.style.filter = 'grayscale(100%) contrast(1.05) brightness(0.88)';
-              }
-          });
-      </script>
-
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Cuando la cámara detecte tu imagen impresa (Target 0), mostrará lo de aquí adentro -->
-      <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity mindar-image-target="targetIndex: 0" id="target0">
           <!-- Marco oscuro y sobrio -->
           <a-box position="0 0 -0.18" width="2.9" height="2.3" depth="0.20" color="#1a1716"></a-box>
           <a-box position="0 0 -0.06" width="2.6" height="2.0" depth="0.14" color="#4a3528"></a-box>
@@ -54,6 +63,68 @@
       </a-entity>
 
     </a-scene>
+
+    <script>
+      (function () {
+        const video = document.getElementById('marker-video');
+        const overlay = document.getElementById('start-overlay');
+        const target = document.getElementById('target0');
+
+        // Aplicamos el filtro en cuanto exista el video
+        function applyFilter() {
+          video.style.filter = 'grayscale(100%) contrast(1.05) brightness(0.88)';
+        }
+
+        // Desbloqueo del video con el primer toque del usuario
+        function unlockVideo() {
+          applyFilter();
+
+          // Forzamos carga y reproducción silenciosa para desbloquear en iOS/Android
+          video.muted = true;
+          const p = video.play();
+          if (p && p.then) {
+            p.then(() => {
+              // Lo pausamos inmediatamente: ya está "desbloqueado"
+              video.pause();
+              video.currentTime = 0;
+              console.log('✅ Video desbloqueado correctamente');
+            }).catch(err => {
+              console.warn('⚠️ No se pudo desbloquear aún:', err);
+            });
+          }
+
+          overlay.style.display = 'none';
+          // Quitamos el listener para que no se repita
+          document.removeEventListener('click', unlockVideo);
+          document.removeEventListener('touchstart', unlockVideo);
+        }
+
+        document.addEventListener('click', unlockVideo, { once: true });
+        document.addEventListener('touchstart', unlockVideo, { once: true });
+
+        // Cuando el marcador se detecta, reproducimos el video
+        target.addEventListener('targetFound', () => {
+          console.log('🎯 Marcador detectado');
+          // Aseguramos que el video esté listo
+          if (video.readyState >= 2) {
+            video.play().catch(e => console.warn('play() falló:', e));
+          } else {
+            // Esperamos a que pueda reproducirse sin cortes
+            video.addEventListener('canplay', function onCanPlay() {
+              video.removeEventListener('canplay', onCanPlay);
+              video.play().catch(e => console.warn('play() falló:', e));
+            });
+          }
+        });
+
+        // Cuando el marcador se pierde, pausamos y reiniciamos
+        target.addEventListener('targetLost', () => {
+          console.log('❌ Marcador perdido');
+          video.pause();
+          video.currentTime = 0;
+        });
+      })();
+    </script>
 
 </body>
 </html>
