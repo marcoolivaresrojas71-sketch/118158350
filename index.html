@@ -2,41 +2,47 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Marco Rojas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Proyecto RA</title>
+    <!-- Importamos A-Frame y el motor MindAR -->
     <script src="./libs/aframe.min.js"></script>
     <script src="./libs/mindar-image-aframe.prod.js"></script>
-    <style>
-        #start-overlay {
-            position: fixed; inset: 0;
-            background: #000; color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-family: system-ui, sans-serif; font-size: 1.2rem;
-            z-index: 9999; cursor: pointer; text-align: center; padding: 20px;
-        }
-    </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
 
-    <div id="start-overlay">Toca para comenzar la experiencia</div>
-
-    <a-scene mindar-image="imageTargetSrc: ./marcador.mind;"
-             color-space="sRGB"
-             renderer="colorManagement: true; physicallyCorrectLights: true"
-             vr-mode-ui="enabled: false"
+    <!-- Cambia "marcador.mind" si tu archivo se llama diferente -->
+    <a-scene mindar-image="imageTargetSrc: ./marcador.mind;" 
+             color-space="sRGB" 
+             renderer="colorManagement: true, physicallyCorrectLights: true" 
+             vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
 
       <a-assets>
-          <!-- Video local: mismo directorio que este HTML -->
+          <!-- Si quieres usar tu propio video, guárdalo en la carpeta del proyecto y cambia src por "./tu-video.mp4" -->
           <video id="marker-video"
-                 src="./libs/abue.mp4"
-                 loop muted playsinline webkit-playsinline preload="auto"
+                 src="libs/abue.mp4"
+                 loop
+                 muted
+                 playsinline
                  crossorigin="anonymous"></video>
       </a-assets>
 
+      <script>
+          document.addEventListener('DOMContentLoaded', function () {
+              const video = document.getElementById('marker-video');
+              if (video) {
+                  video.style.filter = 'grayscale(100%) contrast(1.05) brightness(0.88)';
+                  video.addEventListener('loadeddata', function () {
+                      video.play().catch(function () {});
+                  }, { once: true });
+              }
+          });
+      </script>
+
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0" id="target0">
+      <!-- Cuando la cámara detecte tu imagen impresa (Target 0), mostrará lo de aquí adentro -->
+      <a-entity mindar-image-target="targetIndex: 0">
           <!-- Marco oscuro y sobrio -->
           <a-box position="0 0 -0.18" width="2.9" height="2.3" depth="0.20" color="#1a1716"></a-box>
           <a-box position="0 0 -0.06" width="2.6" height="2.0" depth="0.14" color="#4a3528"></a-box>
@@ -44,58 +50,12 @@
 
           <!-- Video en blanco y negro, íntimo y memorial -->
           <a-plane position="0 0 0.12"
-                   width="1.90" height="1.35"
+                   width="1.90"
+                   height="1.35"
                    material="src: #marker-video; side: double; shader: flat"></a-plane>
       </a-entity>
 
     </a-scene>
-
-    <script>
-      (function () {
-        const video = document.getElementById('marker-video');
-        const overlay = document.getElementById('start-overlay');
-        const target = document.getElementById('target0');
-
-        function applyFilter() {
-          video.style.filter = 'grayscale(100%) contrast(1.05) brightness(0.88)';
-        }
-
-        function unlockVideo() {
-          applyFilter();
-          video.muted = true;
-          const p = video.play();
-          if (p && p.then) {
-            p.then(() => {
-              video.pause();
-              video.currentTime = 0;
-              console.log('✅ Video desbloqueado');
-            }).catch(err => console.warn('⚠️ No se pudo desbloquear:', err));
-          }
-          overlay.style.display = 'none';
-          document.removeEventListener('click', unlockVideo);
-          document.removeEventListener('touchstart', unlockVideo);
-        }
-
-        document.addEventListener('click', unlockVideo, { once: true });
-        document.addEventListener('touchstart', unlockVideo, { once: true });
-
-        target.addEventListener('targetFound', () => {
-          if (video.readyState >= 2) {
-            video.play().catch(e => console.warn('play() falló:', e));
-          } else {
-            video.addEventListener('canplay', function onCanPlay() {
-              video.removeEventListener('canplay', onCanPlay);
-              video.play().catch(e => console.warn('play() falló:', e));
-            });
-          }
-        });
-
-        target.addEventListener('targetLost', () => {
-          video.pause();
-          video.currentTime = 0;
-        });
-      })();
-    </script>
 
 </body>
 </html>
